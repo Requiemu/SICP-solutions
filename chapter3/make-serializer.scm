@@ -1,0 +1,53 @@
+;;#lang racket
+(load "parallel-execute.scm")
+(define (make-serializer)
+  (let ((mutex (make-mutex)))
+    (lambda (p)
+      (define (serialized-p . args)
+        (mutex 'acquire)
+        (let ((val (apply p args)))
+          (mutex 'release)
+          val))
+      serialized-p)))
+
+(define (make-mutex)
+  (let ((cell (list false)))
+    (define (the-mutex m)
+      (cond ((eq? m 'acquire)
+             (if (test-and-set! cell)
+                 (the-mutex 'acquire)));retry
+            ((eq? m 'release) (clear! cell))))
+    the-mutex))
+
+(define (clear! cell)
+  (set-car! cell false))
+
+(define (test-and-set! cell)
+  (without-interrupts
+   (lambda ()
+     (if (car cell)
+         #t
+         (begin (set-car! cell true)
+                false)))))
+
+(define xitt (cons 10 'whatever))
+(define s (make-serializer))
+(parallel-execute (s (lambda () (set-car! xitt (* (car xitt) (car xitt)))))
+                  (s (lambda () (set-car! xitt (* (car xitt) (car xitt) (car xitt)))))
+                  ;(lambda () (set! x "hi"))
+                  (s (lambda () (display xitt)))
+                  )
+(newline)
+(display xitt)
+(newline)
+
+(define xi (cons 10 'whatever))
+(define s (make-serializer))
+(parallel-execute (lambda () (set-car! xi (* (car xi) (car xi))))
+                  (lambda () (set-car! xi (* (car xi) (car xi) (car xi))))
+                  ;(lambda () (set! x "hi"))
+                  (lambda () (display xi))
+                  )
+(newline)
+(display xi)
+(newline)

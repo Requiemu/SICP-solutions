@@ -1,0 +1,2 @@
+#lang racket
+;;One process gets value from the font to the back of a linked list while the other process gets value from the back to the font of the linded list.In this situation, the deadlock can not be avoid by the mechnism referred before.
