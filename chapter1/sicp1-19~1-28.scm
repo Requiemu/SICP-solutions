@@ -11,27 +11,27 @@
                    (+ (* p p) (* q q))
                    (+ (* 2 p q) (* q q))
                    (/ count 2)))
-         (else 
-               (fib-iter (+ (* b q) (* a q) (* a p))
-                         (+ (* b p) (* a q))
-                         p
-                         q
-                         (- count 1)))))
+        (else 
+         (fib-iter (+ (* b q) (* a q) (* a p))
+                   (+ (* b p) (* a q))
+                   p
+                   q
+                   (- count 1)))))
 
 (display (fib 20))
 
 (newline)
 
 (define (smallest-divisor n)
-           (find-divisor n 2))
+  (find-divisor n 2))
 
 (define (find-divisor n k)
-        (cond ((> (* k k) n) n)
-              ((divided? n k) k)
-              (else (find-divisor n (+ k 1)))))
+  (cond ((> (* k k) n) n)
+        ((divided? n k) k)
+        (else (find-divisor n (+ k 1)))))
 
 (define (divided? n k)
-        (= (remainder n k) 0))
+  (= (remainder n k) 0))
 
 (display (smallest-divisor (* 7 13)))
 
@@ -79,11 +79,11 @@
   #t)
 
 (define (search-for-primes first) 
-   (define (search-iter num i) 
-      (cond ((>= i 3) (void))
-            ((timed-prime-test num) (search-iter (+ num 2) (+ i 1)))
-            (else (search-iter (+ num 2) i))))
-   (search-iter (if (even? first) (+ first 1) first) 0))
+  (define (search-iter num i) 
+    (cond ((>= i 3) (void))
+          ((timed-prime-test num) (search-iter (+ num 2) (+ i 1)))
+          (else (search-iter (+ num 2) i))))
+  (search-iter (if (even? first) (+ first 1) first) 0))
 
 ; search the three smallest number after the first number.
 
@@ -91,9 +91,9 @@
 (search-for-primes 10000)    ; 1e4 
 (search-for-primes 100000)   ; 1e5 
 (search-for-primes 1000000)  ; 1e6 
-  
+
 ; the number above didn't show effect obviously, the number should be bigger:
- 
+
 (newline) 
 (search-for-primes 100000000000)     ; 1e9  
 (search-for-primes 1000000000000)    ; 1e10 
@@ -107,18 +107,18 @@
 (display "-----------1.23------------")
 (newline)
 (define (next n)
-          (if (= n 2) 3 (+ n 2)))
+  (if (= n 2) 3 (+ n 2)))
 
 (define (smallest-divisor n)
-           (find-divisor n 2))
+  (find-divisor n 2))
 
 (define (find-divisor n k)
-        (cond ((> (* k k) n) n)
-              ((divided? n k) k)
-              (else (find-divisor n (next k)))))
+  (cond ((> (* k k) n) n)
+        ((divided? n k) k)
+        (else (find-divisor n (next k)))))
 
 (define (divided? n k)
-        (= (remainder n k) 0))
+  (= (remainder n k) 0))
 
 (display (smallest-divisor (* 7 13)))
 
@@ -129,9 +129,9 @@
 (search-for-primes 10000)    ; 1e4 
 (search-for-primes 100000)   ; 1e5 
 (search-for-primes 1000000)  ; 1e6 
-  
+
 ; the number above didn't show effect obviously, the number should be bigger:
- 
+
 (newline) 
 (search-for-primes 100000000000)     ; 1e9  
 (search-for-primes 1000000000000)    ; 1e10 
@@ -150,11 +150,11 @@
 (define (expmod base exp m)
   (cond ((= exp 0) (remainder 1 m))
         ((even? exp)
-        (remainder (square (expmod base (/ exp 2) m))
-                   m))
+         (remainder (square (expmod base (/ exp 2) m))
+                    m))
         (else
-        (remainder (* base (expmod base (- exp 1) m))
-                   m))))
+         (remainder (* base (expmod base (- exp 1) m))
+                    m))))
 
 ;(display (expmod 1 0 1))
 
@@ -178,9 +178,9 @@
 (search-for-primes 10000)    ; 1e4 
 (search-for-primes 100000)   ; 1e5 
 (search-for-primes 1000000)  ; 1e6 
-  
+
 ; the caculation in this method is so quick, however we can see some regulation in it. 
- 
+
 (newline) 
 (search-for-primes 1000000)      
 (search-for-primes 10000000)  
@@ -192,9 +192,9 @@
 (newline)
 
 (define (fast-expt base exp)
-        (cond ((= exp 0) 1)
-              ((even? exp) (square (fast-expt base (/ exp 2))))
-              (else (* base (fast-expt base (- exp 1))))))
+  (cond ((= exp 0) 1)
+        ((even? exp) (square (fast-expt base (/ exp 2))))
+        (else (* base (fast-expt base (- exp 1))))))
 
 ;(display (fast-expt 3 5))
 
@@ -205,7 +205,7 @@
 (search-for-primes 10000)    ; 1e4 
 ;(search-for-primes 100000)   ; 1e5 
 ;(search-for-primes 1000000)  ; 1e6 
- 
+
 ;(newline) 
 ;(search-for-primes 1000000)      
 ;(search-for-primes 10000000)  
@@ -226,18 +226,18 @@
 (define (expmod base exp m)
   (cond ((= exp 0) (remainder 1 m))
         ((even? exp)
-        (remainder (square (expmod base (/ exp 2) m))
-                   m))
+         (remainder (square (expmod base (/ exp 2) m))
+                    m))
         (else
-        (remainder (* base (expmod base (- exp 1) m))
-                   m))))
+         (remainder (* base (expmod base (- exp 1) m))
+                    m))))
 
 (define (all-fermat-test n)
-        (define (iter n i)
-                (cond ((= n i) #t) 
-                      ((not (= (expmod i n n) i)) #f) 
-                      (else (iter n (+ i 1)))))
-        (iter n 1))
+  (define (iter n i)
+    (cond ((= n i) #t) 
+          ((not (= (expmod i n n) i)) #f) 
+          (else (iter n (+ i 1)))))
+  (iter n 1))
 (display (all-fermat-test 5))
 (display (all-fermat-test 24))
 (display (all-fermat-test 13))
@@ -256,9 +256,9 @@
 (define (square x) (* x x))
 
 (define (non-trival-sqrt? n m)
-        (cond ((= n 1) #f)
-              ((= n (- m 1)) #f)
-              (else (= (remainder (square n) m) 1))))
+  (cond ((= n 1) #f)
+        ((= n (- m 1)) #f)
+        (else (= (remainder (square n) m) 1))))
 
 ;(display (non-trival-sqrt? 3 5)) 
 
@@ -266,19 +266,19 @@
   (cond ((= exp 0) (remainder 1 m))
         ((even? exp)
          (let ((x (expmod base (/ exp 2) m)))
-            (if (non-trival-sqrt? x m) 
-                0 
-                (remainder (square x) m)))) 
+           (if (non-trival-sqrt? x m) 
+               0 
+               (remainder (square x) m)))) 
         (else
-        (remainder (* base (expmod base (- exp 1) m))
-                   m))))
+         (remainder (* base (expmod base (- exp 1) m))
+                    m))))
 
 (define (all-mr-test n)
-        (define (iter n i)
-                (cond ((= n i) #t) 
-                      ( (not (= (expmod i (- n 1) n) 1)) #f) 
-                      (else (iter n (+ i 1)))))
-        (iter n 1))
+  (define (iter n i)
+    (cond ((= n i) #t) 
+          ( (not (= (expmod i (- n 1) n) 1)) #f) 
+          (else (iter n (+ i 1)))))
+  (iter n 1))
 (display (all-mr-test 5))
 (display (all-mr-test 24))
 (display (all-mr-test 13))

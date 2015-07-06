@@ -34,15 +34,15 @@
 (display "-----------1.29------------")
 (newline)
 (define (simpson a b n) 
-        (define (simp-term x) 
-                (let ((k (round (/ (* (- x a) n) (- b a))))) 
-                 (cond ((= k 0) (cube x)) 
-                       ((= k n) (cube x))
-                       ((even? k) (* 2 (cube x)))
-                       (else (* 4 (cube x))))))
-        (define (simp-next x) (+ x (/ (- b a) n)))
-        (* (sum simp-term a simp-next b) 
-           (/ (- b a) (* 3 n))))
+  (define (simp-term x) 
+    (let ((k (round (/ (* (- x a) n) (- b a))))) 
+      (cond ((= k 0) (cube x)) 
+            ((= k n) (cube x))
+            ((even? k) (* 2 (cube x)))
+            (else (* 4 (cube x))))))
+  (define (simp-next x) (+ x (/ (- b a) n)))
+  (* (sum simp-term a simp-next b) 
+     (/ (- b a) (* 3 n))))
 
 (display (simpson 0 1.0 100))
 (newline)
@@ -114,9 +114,9 @@
 
 (define (product term a next b)
   (define (iter a result)
-          (if (> a b)
-              result
-              (iter (next a) (* result (term a)))))
+    (if (> a b)
+        result
+        (iter (next a) (* result (term a)))))
   (iter a 1.0))
 
 (display (* (pi-product 3.0 1000.0) 4))
@@ -132,9 +132,9 @@
 ;recursive process:
 
 (define (accumulate combiner null-value term a next b)
-        (if (> a b)
-            null-value 
-            (combiner (term a) (accumulate combiner null-value term (next a) next b))))
+  (if (> a b)
+      null-value 
+      (combiner (term a) (accumulate combiner null-value term (next a) next b))))
 
 (define (sum term a next b) (accumulate + 0 term a next b))
 
@@ -153,11 +153,11 @@
 ;recursive process:
 
 (define (accumulate combiner null-value term a next b)
-        (define (iter a result)
-                (if (> a b) 
-                    result
-                    (iter (next a) (combiner result (term a)))))
-       (iter a null-value))
+  (define (iter a result)
+    (if (> a b) 
+        result
+        (iter (next a) (combiner result (term a)))))
+  (iter a null-value))
 
 (define (sum term a next b) (accumulate + 0 term a next b))
 
@@ -176,11 +176,11 @@
 ;I will just write the iterative method:
 
 (define (filtered-accumulate combiner null-value term a next b filter)
-        (define (iter a result)
-                (cond ((> a b) result)
-                      ((not (filter a b)) (iter (next a) result))
-                      (else (iter (next a) (combiner result (term a))))))
-        (iter a null-value))
+  (define (iter a result)
+    (cond ((> a b) result)
+          ((not (filter a b)) (iter (next a) result))
+          (else (iter (next a) (combiner result (term a))))))
+  (iter a null-value))
 
 (newline)
 (display "-----------1.33a------------")
@@ -193,20 +193,20 @@
 ;Here I use the Miller-Rabin test to determine whether a number is a prime:
 
 (define (non-trival-sqrt? n m)
-        (cond ((= n 1) #f)
-              ((= n (- m 1)) #f)
-              (else (= (remainder (square n) m) 1))))
+  (cond ((= n 1) #f)
+        ((= n (- m 1)) #f)
+        (else (= (remainder (square n) m) 1))))
 
 (define (expmod base exp m)
   (cond ((= exp 0) (remainder 1 m))
         ((even? exp)
          (let ((x (expmod base (/ exp 2) m)))
-            (if (non-trival-sqrt? x m) 
-                0 
-                (remainder (square x) m)))) 
+           (if (non-trival-sqrt? x m) 
+               0 
+               (remainder (square x) m)))) 
         (else
-        (remainder (* base (expmod base (- exp 1) m))
-                   m))))
+         (remainder (* base (expmod base (- exp 1) m))
+                    m))))
 
 (define (mr-test n)
   (define (try-it a) (= (expmod a n n) a))
@@ -258,13 +258,13 @@
 (newline)
 
 (define (close-enough? a b)
-        (< (abs (- a b) ) 0.00000001))
+  (< (abs (- a b) ) 0.00000001))
 
 (define (fixed-point f guess)
-        (let ((x (f guess)))
-             (if (close-enough? x guess) 
-                 x
-                 (fixed-point f x)))) ;this procedure is much simpler than that on the book.
+  (let ((x (f guess)))
+    (if (close-enough? x guess) 
+        x
+        (fixed-point f x)))) ;this procedure is much simpler than that on the book.
 
 (display (fixed-point cos 1.0))
 (newline)
@@ -278,10 +278,10 @@
 ;without average damping:
 
 (define (fixed-point f guess)
-        (let ((x (f guess)))
-             (if (close-enough? x guess)
-                 (begin (newline) (display x) x)
-                 (begin (newline) (display guess) (fixed-point f x)))))
+  (let ((x (f guess)))
+    (if (close-enough? x guess)
+        (begin (newline) (display x) x)
+        (begin (newline) (display guess) (fixed-point f x)))))
 
 
 (fixed-point (lambda (x) (/ (log 1000) (log x))) 2.0)
@@ -292,10 +292,10 @@
 (define (average a b) (/ (+ a b) 2.0))
 
 (define (fixed-point f guess)
-        (let ((x (average guess (f guess))))
-             (if (close-enough? x guess)
-                 (begin (newline) (display x) x)
-                 (begin (newline) (display guess) (fixed-point f x)))))
+  (let ((x (average guess (f guess))))
+    (if (close-enough? x guess)
+        (begin (newline) (display x) x)
+        (begin (newline) (display guess) (fixed-point f x)))))
 
 
 (fixed-point (lambda (x) (/ (log 1000) (log x))) 2.0)
@@ -310,11 +310,11 @@
 ;recursive process:
 
 (define (cont-frac n d k)
-        (define (iter i)
-                (if (>= i k)
-                    (/ (n i) (d i))
-                    (/ (n i) (+ (d i) (iter (+ i 1))))))
-        (iter 1))
+  (define (iter i)
+    (if (>= i k)
+        (/ (n i) (d i))
+        (/ (n i) (+ (d i) (iter (+ i 1))))))
+  (iter 1))
 
 (display (cont-frac (lambda (i) 1.0) (lambda (i) 1.0) 100)) 
 (newline)
@@ -326,17 +326,17 @@
 ;iterative process:
 
 (define (cont-frac n d k)
-        (define (iter ni di k)
-                (if (<= k 1)
-                    (/ (ni 1) (di 1))
-                    (iter ni 
-                          (lambda (k) 
-                                  (+ (d k) 
-                                     (/ (ni (+ k 1)) 
-                                        (di (+ 1 k))))) ;change the procedure "di" iteratively, 
-                          (- k 1))))                    ;in this case, should look from up to down,
-        (iter n d k))                                   ;which means every level need the arguments to plus 1.
-        
+  (define (iter ni di k)
+    (if (<= k 1)
+        (/ (ni 1) (di 1))
+        (iter ni 
+              (lambda (k) 
+                (+ (d k) 
+                   (/ (ni (+ k 1)) 
+                      (di (+ 1 k))))) ;change the procedure "di" iteratively, 
+              (- k 1))))                    ;in this case, should look from up to down,
+  (iter n d k))                                   ;which means every level need the arguments to plus 1.
+
 (display (cont-frac (lambda (i) 1.0) (lambda (i) 1.0) 100)) 
 (newline)
 
@@ -346,9 +346,9 @@
 
 
 (define (d i)
-        (cond ((= (remainder i 3) 1) 1.0)
-              ((= (remainder i 3) 0) 1.0)
-              ((= (remainder i 3) 2) (* (/ (+ i 1) 3.0) 2.0))))
+  (cond ((= (remainder i 3) 1) 1.0)
+        ((= (remainder i 3) 0) 1.0)
+        ((= (remainder i 3) 2) (* (/ (+ i 1) 3.0) 2.0))))
 
 (define (dfc k) (cont-frac (lambda (i) 1.0) d k))
 (newline)
@@ -359,11 +359,11 @@
 (newline)
 
 (define (tan-cf x k) 
-        (cont-frac 
-          (lambda (i) (cond ((= i 1) x) 
-                      (else (- (* x x))))) 
-          (lambda (i) (- (* 2 i) 1)) 
-          k))
+  (cont-frac 
+   (lambda (i) (cond ((= i 1) x) 
+                     (else (- (* x x))))) 
+   (lambda (i) (- (* 2 i) 1)) 
+   k))
 
 (display (tan-cf (/ 3.14 4) 100))
 (newline)
@@ -373,22 +373,22 @@
 (newline)
 
 (define (fixed-point f guess)
-        (let ((x (f guess)))
-             (if (close-enough? x guess) 
-                 x
-                 (fixed-point f x)))) ;this procedure is much simpler than that on the book.
+  (let ((x (f guess)))
+    (if (close-enough? x guess) 
+        x
+        (fixed-point f x)))) ;this procedure is much simpler than that on the book.
 
 (define (average a b) (/ (+ a b) 2))
 
 (define (average-damp f) (lambda (x) (average x (f x))))
 
 (define (average-damp f) 
-        (define (g x) (average x (f x)))
-        g)
+  (define (g x) (average x (f x)))
+  g)
 
 (define (sqrt-cont x) 
-        (fixed-point (average-damp (lambda (y) (/ x y)))
-                     1.0))
+  (fixed-point (average-damp (lambda (y) (/ x y)))
+               1.0))
 (newline)
 (display (sqrt-cont 4)) 
 (newline)
@@ -398,14 +398,14 @@
 ;here is some functons construct to test the use of fixed point.
 
 (define (sqrt-cont x)
-        (fixed-point (average-damp (lambda (y) (sqrt (* (sqrt x) y)))) 1.0))
+  (fixed-point (average-damp (lambda (y) (sqrt (* (sqrt x) y)))) 1.0))
 
 (newline)
 (display (sqrt-cont 4)) 
 (newline)
 
 (define (multi-2 x) 
-        (fixed-point (average-damp (lambda (y) (+ x (/ y 2)))) 1.0))
+  (fixed-point (average-damp (lambda (y) (+ x (/ y 2)))) 1.0))
 
 (newline)
 (display (multi-2 4)) 
@@ -425,7 +425,7 @@
 (define (newton-transform g) (lambda (x) (- x (/ (g x) ((deriv g) x)))))
 
 (define (newton-method g guess)
-        (fixed-point (newton-transform g) guess))
+  (fixed-point (newton-transform g) guess))
 
 (define (cubic a b c) (lambda (x) (+ (* x x x) (* a x x) (* b x) c))) 
 
@@ -449,7 +449,7 @@
 
 (define (inc x) (+ x 1))
 (display
-  (((double (double double)) inc) 5))
+ (((double (double double)) inc) 5))
 
 (newline)
 (display "-----------1.42------------")
@@ -458,25 +458,25 @@
 (define (compose f g) (lambda (x) (f (g x))))
 
 (display 
-         ((compose square inc) 6))
+ ((compose square inc) 6))
 
 (newline)
 (display "-----------1.43------------")
 (newline)
 
 (define (repeated f k) 
-        (if (<= k 1) 
-            f
-            (lambda (x) (f ((repeated f (- k 1)) x)))))
+  (if (<= k 1) 
+      f
+      (lambda (x) (f ((repeated f (- k 1)) x)))))
 
 (display ((repeated square 2) 5))
 (newline)
 ;use the "compose"
 
 (define (repeated f k)
-        (if (<= k 1)
-            f
-            (compose f (repeated f (- k 1)))))
+  (if (<= k 1)
+      f
+      (compose f (repeated f (- k 1)))))
 
 (display ((repeated square 2) 5))
 (newline)   
@@ -497,24 +497,24 @@
 
 
 (define (fast-expt base exp)
-        (define (iter res base exp)
-                (cond ((= exp 0) res)
-                      ((even? exp) (iter res (square base) (/ exp 2)))
-                      (else (iter (* res base) base (- exp 1)))))
-        (iter 1 base exp)) 
+  (define (iter res base exp)
+    (cond ((= exp 0) res)
+          ((even? exp) (iter res (square base) (/ exp 2)))
+          (else (iter (* res base) base (- exp 1)))))
+  (iter 1 base exp)) 
 
 (define (average-damp f)
-        (lambda (y) (/ (+ y (f y)) 2)))
-           
+  (lambda (y) (/ (+ y (f y)) 2)))
+
 (define (n-average f n) 
-        ((repeated average-damp n) f))
+  ((repeated average-damp n) f))
 
 (define (4-sqrt x) 
-        (fixed-point 
-          (lambda 
-            (y) 
-            ((n-average (lambda (y) (/ x (fast-expt y 3))) 2.0) y )) ;2 average-damp
-          300.0 ))
+  (fixed-point 
+   (lambda 
+       (y) 
+     ((n-average (lambda (y) (/ x (fast-expt y 3))) 2.0) y )) ;2 average-damp
+   300.0 ))
 
 (display (4-sqrt 256));4
 (newline)
@@ -523,9 +523,9 @@
 (newline)
 
 (define (5-sqrt x) 
-        (fixed-point 
-            (n-average (lambda (y) (/ x (fast-expt y 4))) 2) ;3 average-damp
-            1.0 ))
+  (fixed-point 
+   (n-average (lambda (y) (/ x (fast-expt y 4))) 2) ;3 average-damp
+   1.0 ))
 
 (display (5-sqrt 32.0));2
 (newline)
@@ -534,9 +534,9 @@
 (newline)
 
 (define (8-sqrt x) 
-        (fixed-point 
-            (n-average (lambda (y) (/ x (fast-expt y 7))) 3) ;3 average-damp
-            30.0 ))
+  (fixed-point 
+   (n-average (lambda (y) (/ x (fast-expt y 7))) 3) ;3 average-damp
+   30.0 ))
 
 (display (8-sqrt 256.0));2
 (newline)
@@ -547,14 +547,14 @@
 ; the regulation is to find the 2^n small than x, and use average damp n times.
 
 (define (exp2 x)
-        (define (iter n r)
-                  (if (> r x) (- n 1) (iter (+ n 1) (* r 2))))
-        (iter 1 2))
+  (define (iter n r)
+    (if (> r x) (- n 1) (iter (+ n 1) (* r 2))))
+  (iter 1 2))
 
 (define (root-n x n)
-        (fixed-point
-          (n-average (lambda (y) (/ x (fast-expt y (- n 1)))) (exp2 n))
-          1.0));fix me:here must be float, or it will be wrong.
+  (fixed-point
+   (n-average (lambda (y) (/ x (fast-expt y (- n 1)))) (exp2 n))
+   1.0));fix me:here must be float, or it will be wrong.
 (newline)
 (display (root-n 256 8))
 (newline)
@@ -562,29 +562,29 @@
 (newline)
 
 (define (iterative-improve good? improve)
-        (define (iter x)
-                (if (good? x)
-                    (improve x)
-                    (iter (improve x))))
-        iter)
+  (define (iter x)
+    (if (good? x)
+        (improve x)
+        (iter (improve x))))
+  iter)
 
 (define (sqrt1 x)
-        (define (improve guess) (/ (+ (/ x guess) guess) 2))
-        (define (good? guess) (< (abs (- guess (improve guess))) 0.00001))
-        ((iterative-improve good? improve) x))
+  (define (improve guess) (/ (+ (/ x guess) guess) 2))
+  (define (good? guess) (< (abs (- guess (improve guess))) 0.00001))
+  ((iterative-improve good? improve) x))
 
 (display (sqrt1 4.0))
 
 (define (fixed-point f guess)
-        (define (good? guess) (< (abs (- guess (f guess))) 0.00001))
-        ((iterative-improve good? f) guess))
+  (define (good? guess) (< (abs (- guess (f guess))) 0.00001))
+  ((iterative-improve good? f) guess))
 
 ;choose a function using fixed-point to test.
 
 (define (root-n x n)
-        (fixed-point
-          (n-average (lambda (y) (/ x (fast-expt y (- n 1)))) (exp2 n))
-          1.0));fix me:here must be float, or it will be wrong.
+  (fixed-point
+   (n-average (lambda (y) (/ x (fast-expt y (- n 1)))) (exp2 n))
+   1.0));fix me:here must be float, or it will be wrong.
 (newline)
 (display (root-n 256 8))
 (newline)
