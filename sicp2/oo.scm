@@ -1,0 +1,45 @@
+(define (smallest-divisor n) (find-divisor n 2))
+
+(define (find-divisor n test-divisor)
+  (cond ((> (square test-divisor) n) n)
+        ((divides? test-divisor n) test-divisor)
+        (else (find-divisor n (+ test-divisor 1)))))
+
+(define (divides? a b) (= (remainder b a) 0))
+
+(define (square x) (* x x))
+
+(define (prime? n)
+  (= n (smallest-divisor n)))
+
+; fast method
+(define (smallest-divisor-fast n) (find-divisor-fast n 2))
+
+(define (find-divisor-fast n test-divisor)
+  (cond ((> (square test-divisor) n) n)
+        ((divides? test-divisor n) test-divisor)
+        (else (find-divisor-fast n (next test-divisor)))))
+
+(define (next number)
+  (if (= number 2)
+      3
+      (+ number 2)))
+
+(define (prime-fast? n)
+  (= n (smallest-divisor-fast n)))
+
+;accumulate the time
+(define runtime current-inexact-milliseconds)
+(define (timed-prime-test n prime-method)
+  (newline)
+  (display n)
+  (start-prime-test (runtime) prime-method n)
+  )
+(define (start-prime-test start-time prime-method n)
+  (prime-method n)
+  (display " *** ")
+  (display (- (runtime) start-time))
+  )
+
+(timed-prime-test 100000000000097 prime-fast?)
+(timed-prime-test 100000000000097 prime?)
