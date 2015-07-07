@@ -49,8 +49,6 @@
   (make-zero-crossings (smooth sense-data) 0))
 
 
-
-
 ;(define (stream-map-boss proc . argstreams)
 ;  (if (null? (car argstreams))
 ;      empty-stream
