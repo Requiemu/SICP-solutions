@@ -63,16 +63,6 @@
                                      (stream-cdr stream))))
         (else (stream-filter pred (stream-cdr stream)))))
 
-(define (stream-front-show stream n)
-  (define (iter i)
-    (if (>= i n)
-        (begin (display (stream-ref stream i))
-               (newline))
-        (begin (display (stream-ref stream i))
-               (newline)
-               (iter (+ i 1)))))
-  (iter 0))
-
 ;;stream operation 
 
 (define (stream-enumerate-interval low high)
@@ -87,5 +77,3 @@
   x)
 
 ;;stream application
-
-(define test (stream-

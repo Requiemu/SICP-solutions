@@ -67,9 +67,12 @@
 
 ;;stream application
 
+(display "--------------")
+
 (define x (stream-map 
            show 
            (stream-enumerate-interval 0 10)))
+(newline)
 
 (stream-ref x 5)
 (stream-ref x 7)
