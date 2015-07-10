@@ -72,8 +72,10 @@
                       (eval (first-operand exps) env)))))
   (iter exps '()))
 
+(display "--------------")
+
 (define (list-of-values-left-to-right exps env)
-  (reverse (list-of-values-right-to-left (reverse exps env))))
+ (reverse (list-of-values-right-to-left (reverse exps env))))
 
 (define (self-evaluating? exp)
   (cond ((number? exp) true)
@@ -167,11 +169,6 @@
             (make-if (cond-predicate first)
                      (sequence->exp (cond-actions first))
                      (expand-clauses rest))))))
-
-
-
-
-
 
 
 
