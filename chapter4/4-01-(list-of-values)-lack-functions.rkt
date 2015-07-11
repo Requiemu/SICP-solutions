@@ -18,8 +18,7 @@
          (apply (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
         (else
-         (error "Unknown expression type -
-- EVAL" exp))))
+         (error "Unknown expression type -- EVAL" exp))))
 
 (define (apply procedure arguments)
   (cond ((primitive-procedure? procedure)
@@ -130,7 +129,7 @@
 (define (begin? exp) (tagged-list? exp 'begin))
 (define (begin-actions exp) (cdr exp))
 (define (last-exp? seq) (null? (cdr seq)))
-(define (first-exp seq) (car seq))
+(define (first-ezp seq) (car seq))
 (define (rest-exps seq) (cdr seq))
 
 (define (sequence->exp seq)
