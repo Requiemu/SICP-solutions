@@ -186,11 +186,6 @@
 (define (procedure-body p) (caddr p))
 (define (procedure-environment p) (cadddr p))
 
-;(lookup-variable-value )
-;(extend-environment )
-;(define-variable! )
-;(set-variable-value!)
-
 (define (enclosing-environment env) (cdr env))
 (define (first-frame env) (car env))
 (define the-empty-environment '())

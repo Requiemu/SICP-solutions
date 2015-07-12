@@ -114,7 +114,7 @@
   (let ((frame (first-frame env)))
     (define (scan frame)
       (cond ((eq? frame the-empty-frame)
-             (error "no pairs this name -- UNBOUND" var))
+             (error "no pairs this name" var))
             ((eq? var (pair-var (first-pair frame)))
              (begin (set-car! frame (first-pair (rest-pairs frame)))
                     (set-cdr! frame (rest-pairs (rest-pairs frame)))))
@@ -129,8 +129,6 @@
 (unbound! 1 test-env)
 
 (display test-env)
-
-(unbound! 'q test-env)
 
 
              
