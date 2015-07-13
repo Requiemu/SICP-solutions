@@ -214,12 +214,12 @@
 (define (definition-value exp)
   (cond ((eq? (definition-type exp) 'normal) (caddr exp))
         ((eq? (definition-type exp) 'function)
-         (eval (make-lambda (function-parameters exp) (caddr exp))))
+         (make-lambda (function-parameters exp) (caddr exp)))
         (else (error "unknow definition type -- DEFINITION-VARIABLE" exp))))
 
 (definition-value '(define f (+ x 1)))
 (definition-variable '(define f (+ x 1)))
-;(definition-value '(define (f x) (+ x 1)))
+(definition-value '(define (f x) (+ x 1)))
   
   
 
