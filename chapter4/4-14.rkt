@@ -258,6 +258,8 @@
                (list 'cdr cdr)
                (list 'cons cons)
                (list 'null? null?)
+               (list 'map map)
+               (list 'reverse reverse)
                ;;=========more primitives=========
                ))
 
@@ -319,6 +321,21 @@
       (display object)))
 
 (driver-loop)
+
+;;Eva's worked because he has implemented the procedure map:
+;(define (map f l)
+;  (define (iter list-rest result)
+;    (if (null? list-rest)
+;        (reverse result)
+;        (iter (cdr list-rest) (cons (f (car list-rest)) result))))
+;  (iter l '()))
+
+;;Louis's would not work because the expression will be handled like this:
+;;'(map f '(1 2 3 4))
+;;(apply map '(primitive f) '(1 2 3 4))
+;;the arguments for apply is too many, so the map will not work.
+;;This shows that, our eval here, just support the form that operator at the first place of the expression. Just the situation that operator in this place will the operator be "apply".
+;;So, the map procedure must be implemented to be used or the original one in the original language will cause error.
 
 
 
