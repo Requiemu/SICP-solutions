@@ -13,6 +13,7 @@
                          (lambda-body exp)
                          env))
         ((let? exp) (eval (let->lambda exp) env))
+        ((letrec? exp) (eval (letrec->let exp) env))
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
@@ -410,27 +411,62 @@
 (define (body-transform body)
   (cddr (scan-out-defines (cons 'lambda (cons 'vars body)))))
 
+
+
+ 
+;;;;;;
+;;(let ((x y) (z i) (j u)
+
+(define (letrec? exp)
+  (if (pair? exp)
+      (if (eq? (car exp) 'letrec)
+          #t
+          #f)
+      #f))
+
+(define (make-produce-symbol n)
+  (define make 
+    (lambda () 
+      (set! n (+ n 1))
+      (string->symbol (number->string n))))
+  make)
+
+(define sy (make-produce-symbol 1))
+
+(define (letrec->let exp)
+  (let ((let-out (map (lambda (x) (list (car x) "*unassigned*")) (cadr exp)))
+        (let-in  (map (lambda (x) (list (sy) (cadr x))) (cadr exp))))
+    (list 'let 
+          let-out
+           (cons 'let
+                 (cons let-in 
+                       (append 
+                        (map (lambda (x y) (list 'set! (car x) (car y)))
+                             let-out let-in)
+                        (cddr exp)))))))
+
 (driver-loop)
 
+;;the test
 
-;;test
-;;>(define (f x) (define y 2) (+ x y))
-;;>(f 3)
+;(letrec ((x 1) (y 2)) (+ x y))
 
-;;< 5
+;(let ((x "*unassigned*") (y "*unassigned*")) (let ((|2| 1) (|3| 2)) (set! x |2|) (set! y |3|) (+ x y)))
 
-;;c.
-;;put scan-out-defines in make-procedure is better(actually it was put in body-transform, then into make-procedure), if it was put in procedure-body, everytime it will be calculated.
-
-
-
-
-
-
-
-
-
-
-
-
-
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           
+           

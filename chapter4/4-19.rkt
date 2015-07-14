@@ -34,7 +34,7 @@
            (procedure-environment procedure))))
         (else
          (error
-          "Unknown procedure type -- APPLY-NEW" procedure))))
+          "Unknown procedure type -- APPLY" procedure))))
 
 (define (list-of-values exps env)
   (if (no-operands? exps)
@@ -302,7 +302,6 @@
         (list 'reverse reverse)
         (list 'display display)
         (list '+ +)
-        (list '* *)
         ;(list 'set! set!)
         ;;=========more primitives=========
         ))
@@ -396,10 +395,10 @@
     (if (null? defs) exp
         (make-lambda (cadr nondefs)
                      (list (cons 'let 
-                                 (cons (map (lambda (x) (list (definition-variable x) "*unassigned*"))
+                                 (cons (map (lambda (x) (list (cadr x) "*unassigned*"))
                                             defs)
                                        (append 
-                                        (map (lambda (x) (list 'set! (definition-variable x) (definition-value x)))
+                                        (map (lambda (x) (list 'set! (cadr x) (caddr x)))
                                              defs)
                                         (cddr nondefs)))))))))
 
@@ -412,15 +411,16 @@
 
 (driver-loop)
 
-
 ;;test
-;;>(define (f x) (define y 2) (+ x y))
-;;>(f 3)
+;(let ((a 1))
+;  (define (f x)
+;    (define b (+ a x))
+;    (define a 5)
+;    (+ a b))
+;  (f 10))
 
-;;< 5
-
-;;c.
-;;put scan-out-defines in make-procedure is better(actually it was put in body-transform, then into make-procedure), if it was put in procedure-body, everytime it will be calculated.
+;;>Unbound variable x
+;;In this case, Alyssa' opinion is right.
 
 
 
