@@ -219,7 +219,7 @@
 (define (compound-procedure? p)
   (tagged-list? p 'procedure))
 (define (procedure-parameters p) (cadr p))
-(define (procedure-body p) (cddr p))
+(define (procedure-body p) (caddr p))
 (define (procedure-environment p) (cadddr p))
 
 ;(lookup-variable-value )
@@ -367,39 +367,40 @@
 
 (define (scan-out-defines exp)
   (define (iter origin del-defs defs)
-        (if (null? origin) 
-            (cons (reverse del-defs) (reverse defs))
-            (let ((x (car origin))) 
-              (cond ((or (number? x)
-                         (symbol? x)
-                         (string? x))
+    (if (null? origin) 
+        (cons (reverse del-defs) (reverse defs))
+        (let ((x (car origin))) 
+          (cond ((or (number? x)
+                     (symbol? x)
+                     (string? x))
+                 (iter (cdr origin) 
+                       (cons x del-defs)
+                       defs))
+                ((pair? x) 
+                 (if (eq? (car x) 'define)
                      (iter (cdr origin) 
-                           (cons x del-defs)
-                           defs))
-                    ((pair? x) 
-                     (if (eq? (car x) 'define)
-                         (iter (cdr origin) 
-                               del-defs
-                               (cons x defs))
-                         (iter (cdr origin) 
-                               (cons (if (lambda? x) 
-                                         (scan-out-defines x)
-                                         x)
-                                     del-defs)
-                               defs)))
-                    (else "unknow type -- SCAN-OUT-DEFINES" exp)))))
+                           del-defs
+                           (cons x defs))
+                     (iter (cdr origin) 
+                           (cons (if (lambda? x) 
+                                     (scan-out-defines x)
+                                     x)
+                                 del-defs)
+                           defs)))
+                (else "unknow type -- SCAN-OUT-DEFINES" exp)))))
   ;;nondef-def-pairs: (cons ('lambda <parameters> body0 body1 ...)
   ;;                        defs)
   (let ((nondefs (car (iter exp '() '())))
         (defs (cdr (iter exp '() '()))))
-    (make-lambda (cadr nondefs)
-                 (cons 'let 
-                       (cons (map (lambda (x) (list (cadr x) "*unassigned*"))
-                                  defs)
-                             (append 
-                              (map (lambda (x) (list 'set! (cadr x) (caddr x)))
-                                   defs)
-                              (cddr nondefs)))))))
+    (if (null? defs) exp
+        (make-lambda (cadr nondefs)
+                     (list (cons 'let 
+                                 (cons (map (lambda (x) (list (cadr x) "*unassigned*"))
+                                            defs)
+                                       (append 
+                                        (map (lambda (x) (list 'set! (cadr x) (caddr x)))
+                                             defs)
+                                        (cddr nondefs)))))))))
 
 ;(define test '(lambda (x) (define u 1) (define v 2) (+ 1 2)))
 
@@ -409,6 +410,16 @@
   (cddr (scan-out-defines (cons 'lambda (cons 'vars body)))))
 
 (driver-loop)
+
+
+;;test
+;;>(define (f x) (define y 2) (+ x y))
+;;>(f 3)
+
+;;< 5
+
+;;c.
+;;put scan-out-defines in make-procedure is better(actually it was put in body-transform, then into make-procedure), if it was put in procedure-body, everytime it will be calculated.
 
 
 
