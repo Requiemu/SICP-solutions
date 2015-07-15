@@ -1,92 +1,89 @@
 #lang planet neil/sicp
 
-(define (eval exp env)
-  (cond ((self-evaluating? exp) exp)
-        ((variable? exp) (lookup-variable-value exp env))
-        ((set!? exp) (eval-set! exp env))
-        ((quoted? exp) (text-of-quotation exp))
-        ;((assignment? exp) (eval-assignment exp env))
-        ((definition? exp) (eval-definition exp env))
-        ((if? exp) (eval-if exp env))
-        ((lambda? exp)
-         (make-procedure (lambda-parameters exp)
-                         (lambda-body exp)
-                         env))
-        ((let? exp) (eval (let->lambda exp) env))
-        ((letrec? exp) (eval (letrec->let exp) env))
-        ((begin? exp)
-         (eval-sequence (begin-actions exp) env))
-        ((cond? exp) (eval (cond->if exp) env))
-        ((application? exp)
-         (apply-new (eval (operator exp) env)
-                    (list-of-values (operands exp) env)))
+(define (analyze exp)
+  (cond ((self-evaluating? exp)
+         (analyze-self-evaluating exp))
+        ((quoted? exp) (analyze-variable exp))
+        ((variable? exp) (analyze-variable exp))
+        ((assignment? exp) (analyze-assignment exp));;...
+        ((definition? exp) (analyze-definition exp))
+        ((if? exp) (analyze-if exp))
+        ((lambda? exp) (analyze-lambda exp))
+        ((begin? exp) (analyze-sequence (begin-actions exp)))
+        ((cond? exp) (analyze (cond->if exp)))
+        ((application? exp) (analyze-application exp))
+        (else 
+         (error "Unknown expression type -- ANALYZE" exp))))
+
+;;====================================================
+;;analyze procedure
+
+(define (analyze-self-evaluating exp)
+  (lambda (env) exp))
+(define (analyze-quoted exp)
+  (let ((qval (text-of-quotation exp)))
+    (lambda (env) qval)))
+(define (analyze-variable exp)
+  (lambda (env) (lookup-variable-value exp env)))
+(define (analyze-assignment exp)
+  (let ((var (assignment-variable exp))
+        (vproc (analyze (assignment-value exp))))
+    (lambda (env)
+      (set-variable-value! var (vproc env) env)
+      'ok)))
+(define (analyze-definition exp)
+  (let ((var (definition-variable exp))
+        (vproc (analyze (definition-value exp))))
+    (lambda (env)
+      (define-variable! var (vproc env) env)
+      'ok)))
+(define (analyze-if exp)
+  (let ((pproc (analyze (if-predicate exp)))
+        (cproc (analyze (if-consequent exp)))
+        (aproc (analyze (if-alternative exp))))
+    (lambda (env)
+      (if (true? (pproc env))
+          (cproc env)
+          (aproc env)))))
+(define (analyze-lambda exp)
+  (let ((vars (lambda-parameters exp))
+        (bproc (analyze-sequence (lambda-body exp))))
+    (lambda (env) (make-procedure vars bproc env))))
+(define (analyze-sequence exps)
+  (define (sequentially proc1 proc2)
+    (lambda (env) (proc1 env) (proc2 env)))
+  (define (loop first-proc rest-procs)
+    (if (null? rest-procs)
+        first-proc
+        (loop (sequentially first-proc (car rest-procs))
+              (cdr rest-procs))))
+  (let ((procs (map analyze exps)))
+    (if (null? procs)
+        (error "Empty sequence -- ANALYZE"))
+    (loop (car procs) (cdr procs))))
+(define (analyze-application exp)
+  (let ((fproc (analyze (operator exp)))
+        (aprocs (map analyze (operands exp))))
+    (lambda (env)
+      (execute-application (fproc env)
+                           (map (lambda (aproc) (aproc env))
+                                aprocs)))))
+
+(define (execute-application proc args)
+  (cond ((primitive-procedure? proc)
+         (apply-primitive-procedure proc args))
+        ((compound-procedure? proc)
+         ((procedure-body proc)
+          (extend-environment (procedure-parameters proc)
+                              args
+                              (procedure-environment proc))))
         (else
-         (error "Unknown expression type -- EVAL" exp))))
+         (error 
+          "Unknown procedure type -- EXECUTE-APPLICATION"
+          proc))))
 
-(define (apply-new procedure arguments)
-  (cond ((primitive-procedure? procedure)
-         (apply-primitive-procedure procedure arguments))
-        ((compound-procedure? procedure)
-         (eval-sequence
-          (procedure-body procedure)
-          (extend-environment
-           (procedure-parameters procedure)
-           arguments
-           (procedure-environment procedure))))
-        (else
-         (error
-          "Unknown procedure type -- APPLY-NEW" procedure))))
-
-(define (list-of-values exps env)
-  (if (no-operands? exps)
-      '()
-      (cons (eval (first-operand exps) env)
-            (list-of-values (rest-operands exps) env))))
-
-(define (set!? exp) (tagged-list? exp 'set!))
-(define (set!-var exp) (cadr exp))
-(define (set!-val exp) (caddr exp))
-(define (eval-set! exp env)
-  (set-variable-value! (set!-var exp)
-                       (eval (set!-val exp) env)
-                       env))
-
-(define (eval-if exp env)
-  (if (true? (eval (if-predicate exp) env))
-      (eval (if-consequent exp) env)
-      (eval (if-alternative exp) env)))
-
-(define (eval-sequence exps env)
-  (cond ((last-exp? exps) (eval (first-exp exps) env))
-        (else (eval (first-exp exps) env)
-              (eval-sequence (rest-exps exps) env))))
-
-(define (eval-assignment exp env)
-  (set-variable-value! (assignment-variable exp)
-                       (eval (assignment-value exp) env)
-                       env)
-  'ok)
-
-(define (eval-definition exp env)
-  (define-variable! 
-    (definition-variable exp)
-    (eval (definition-value exp) env)
-    env)
-  'ok)
-
-(define (list-of-values-right-to-left exps env)
-  (define (iter exp l)
-    (if (no-operands? exps)
-        l
-        (iter (rest-operands exps) 
-              (append l 
-                      (eval (first-operand exps) env)))))
-  (iter exps '()))
-
-;(display "--------------")
-
-;(define (list-of-values-left-to-right exps env)
-;  (reverse (list-of-values-right-to-left (reverse exps env))))
+;;==================================
+;;surpport grammar data structure
 
 (define (self-evaluating? exp)
   (cond ((number? exp) true)
@@ -195,28 +192,11 @@
 (define (false? x)
   (eq? x false))
 
-(define (let-pairs exp) (cadr exp))
-(define (pairs-var pair0) (car pair0))
-(define (pairs-exp exp0) (cadr exp0))
-(define (let-body exp) (cddr exp))
-(define (let? exp)
-  (eq? (car exp) 'let))
-
-(define (let->lambda exp)
-  (cons (make-lambda 
-         (map pairs-var (let-pairs exp))
-         (let-body exp))
-        (map pairs-exp (let-pairs exp))))
-
-;(define test-let (list 'let '((x 1) (y 2)) '(+ x y)))
-
-;(let->lambda test-let)
-
-;;(apply-primitive-procedure <proc> <args>)
-;;(primitive-procedure? <proc>)
+;;====================================================
+;;support environment
 
 (define (make-procedure parameters body env)
-  (list 'procedure parameters (body-transform body) env))
+  (list 'procedure parameters body env))
 (define (compound-procedure? p)
   (tagged-list? p 'procedure))
 (define (procedure-parameters p) (cadr p))
@@ -340,36 +320,6 @@
 
 
 
-
-
-
-(define input-prompt ";;; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
-
-(define (driver-loop)
-  (prompt-for-input input-prompt)
-  (let ((input (read)))
-    (let ((output (eval input the-global-environment)))
-      (announce-output output-prompt)
-      (user-print output)))
-  (driver-loop))
-
-(define (prompt-for-input string)
-  (newline) (newline) (display string) (newline))
-
-(define (announce-output string)
-  (newline) (display string) (newline))
-
-(define (user-print object)
-  (if (compound-procedure? object)
-      (display (list 'compound-procedure
-                     (procedure-parameters object)
-                     (procedure-body object)
-                     '<procedure-env>))
-      (display object)))
-
-
-
 (define (scan-out-defines exp)
   (define (iter origin del-defs defs)
     (if (null? origin) 
@@ -416,91 +366,50 @@
 
 
 
- 
-;;;;;;
-;;(let ((x y) (z i) (j u)
 
-(define (letrec? exp)
-  (if (pair? exp)
-      (if (eq? (car exp) 'letrec)
-          #t
-          #f)
-      #f))
+(define (eval exp env)
+  ((analyze exp) env))
 
-(define (make-produce-symbol n)
-  (define make 
-    (lambda () 
-      (set! n (+ n 1))
-      (string->symbol (number->string n))))
-  make)
 
-(define sy (make-produce-symbol 1))
 
-(define (letrec->let exp)
-  (let ((let-out (map (lambda (x) (list (car x) "*unassigned*")) (cadr exp)))
-        (let-in  (map (lambda (x) (list (sy) (cadr x))) (cadr exp))))
-    (list 'let 
-          let-out
-           (cons 'let
-                 (cons let-in 
-                       (append 
-                        (map (lambda (x y) (list 'set! (car x) (car y)))
-                             let-out let-in)
-                        (cddr exp)))))))
+
+
+
+(define input-prompt ";;; M-Eval input:")
+(define output-prompt ";;; M-Eval value:")
+
+(define (driver-loop)
+  (prompt-for-input input-prompt)
+  (let ((input (read)))
+    (let ((output (eval input the-global-environment)))
+      (announce-output output-prompt)
+      (user-print output)))
+  (driver-loop))
+
+(define (prompt-for-input string)
+  (newline) (newline) (display string) (newline))
+
+(define (announce-output string)
+  (newline) (display string) (newline))
+
+(define (user-print object)
+  (if (compound-procedure? object)
+      (display (list 'compound-procedure
+                     (procedure-parameters object)
+                     (procedure-body object)
+                     '<procedure-env>))
+      (display object)))
 
 (driver-loop)
 
-;;the test
-
-;(letrec ((x 1) (y x)) (+ x y))
-;;transform to:
-;(let ((x "*unassigned*") (y "*unassigned*")) (let ((|2| 1) (|3| 2)) (set! x |2|) (set! y |3|) (+ x y)))
 
 
 
 
-;(define (f x)
-;  (letrec ((even? (lambda (n) 
-;                   (if (= n 0)
-;                       true
-;                       (odd? (- n 1)))))
-;           (odd? (lambda (n)
-;                   (if (= n 0)
-;                       false
-;                       (even? (- n 1))))))
-;    (even? x)))
 
 
 
-;(define (f x)
-;  (letrec ((even? (lambda (n) 
-;                   (if (= n 0)
-;                       true
-;                       (odd? (- n 1)))))
-;           (odd? (lambda (n)
-;                   (if (= n 0)
-;                       false
-;                       (even? (- n 1))))))
-;    (even? x)))
-
-;;Letrec act normal, while let act abnormal.
-                 
 
 
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           
+
+
