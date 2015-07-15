@@ -12,4 +12,4 @@
 
 (sy)
 
-(map (lambda (x) (list (sy) x)) '(1 2 3 4))
+(map (lambda (x) (list (sy) x)) '(1 2 3 4 5 6 7 8 9 0))
