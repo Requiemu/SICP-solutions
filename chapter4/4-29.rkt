@@ -45,18 +45,23 @@
 (define (actual-value exp env)
   (force-it (eval exp env)))
 
+;(define (force-it obj)
+;  (cond ((thunk? obj)
+;         (let ((result (actual-value
+;                        (thunk-exp obj)
+;                        (thunk-env obj))))
+;           (set-car! obj 'evaluated-thunk)
+;           (set-car! (cdr obj) result)
+;           (set-cdr! (cdr obj) '())
+;           result))
+;        ((evaluated-thunk? obj)
+;         (thunk-value obj))
+;        (else obj)))
+
 (define (force-it obj)
-  (cond ((thunk? obj)
-         (let ((result (actual-value
-                        (thunk-exp obj)
-                        (thunk-env obj))))
-           (set-car! obj 'evaluated-thunk)
-           (set-car! (cdr obj) result)
-           (set-cdr! (cdr obj) '())
-           result))
-        ((evaluated-thunk? obj)
-         (thunk-value obj))
-        (else obj)))
+  (if (thunk? obj)
+      (actual-value (thunk-exp obj) (thunk-env obj))
+      obj))
 
 (define (list-of-arg-values exps env)
   (if (no-operands? exps)
@@ -534,9 +539,24 @@
 
 (driver-loop)
 
-;;the test
+;;the test:
 
+(define (square x) (* x x))
+(define c 0)
+(define (idc x) (set! c (+ c 1)) x)
+(square (idc 2))
+c
 
+;;; L-Eval input:
+;(square (id 10))
+;;; L-Eval value:
+;10
+;;; L-Eval input:
+;count
+;;; L-Eval value(with memorization):
+1
+;;; L-Eval value(without memorization):
+2
 
 
 
