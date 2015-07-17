@@ -548,13 +548,14 @@
 c
 
 ;;; L-Eval input:
-;(square (id 10))
+(square (id 10))
 ;;; L-Eval value:
-;10
+10
 ;;; L-Eval input:
-;count
+count
 ;;; L-Eval value(with memorization):
 1
+
 ;;; L-Eval value(without memorization):
 2
 
