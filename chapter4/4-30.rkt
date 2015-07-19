@@ -132,9 +132,14 @@
       (eval (if-consequent exp) env)
       (eval (if-alternative exp) env)))
 
+;(define (eval-sequence exps env)
+;  (cond ((last-exp? exps) (eval (first-exp exps) env))
+;        (else (eval (first-exp exps) env)
+;              (eval-sequence (rest-exps exps) env))))
+
 (define (eval-sequence exps env)
   (cond ((last-exp? exps) (eval (first-exp exps) env))
-        (else (eval (first-exp exps) env)
+        (else (actual-value (first-exp exps) env)
               (eval-sequence (rest-exps exps) env))))
 
 (define (eval-assignment exp env)
@@ -551,11 +556,52 @@
 
 ;;; L-Eval input:
 (for-each (lambda (x) (display x))
-'(57 321 88))
+          '(57 321 88))
+
+5732188
+;;; L-Eval value:
+;done
 
 ;;this is correct because for-each execute the items in the list one by one.
 
-;;b
+;;b.
 
+(define (p1 x)
+  (set! x (cons x '(2)))
+  x)
+
+
+(define (p2 x)
+  (define (p e)
+    e
+    x)
+  (p (set! x (cons x '(2)))))
+
+(p1 1) 
+;;; L-Eval value:
+(1 2)
+
+
+(p2 1)
+
+;;; L-Eval value:
+1
+
+;;the first is correct while the second has argument that isn't has the effect it was supposed to.
+
+;then we change the eval-sequence to Cy's version:
+
+;(define (eval-sequence exps env)
+;  (cond ((last-exp? exps) (eval (first-exp exps) env))
+;        (else (actual-value (first-exp exps) env)
+;              (eval-sequence (rest-exps exps) env))))
+
+;then the first and second test both run well as we supposed.
+
+;;c.
+
+;;Because in that situation "eval" has the same effect as "real-value"
+
+;;d. Cy's approach is better.
 
 
