@@ -1,7 +1,5 @@
 #lang planet neil/sicp
 
-;;只是改了求值顺序而已。参数先不求值，在真正需要时（遇到primitive procedure，或明确要求给出真实值时）再给出真实值。
-
 (define (eval exp env)
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
@@ -35,7 +33,7 @@
           (procedure-body procedure)
           (extend-environment
            (procedure-parameters procedure)
-           (list-of-delayed-args arguments env);changed
+           (list-of-values-depends arguments env);changed
            (procedure-environment procedure))))
         (else
          (error
@@ -45,10 +43,17 @@
 ;;lazy evaluation added function
 
 (define (actual-value exp env)
-  (force-it (eval exp env)))
+  (begin (newline)
+         (display exp)
+         (newline)
+         (display (eval exp env))
+         (newline)
+         (display "=========================")
+         (newline)
+         (force-it (eval exp env))))
 
 (define (force-it obj)
-  (cond ((thunk? obj)
+  (cond ((thunk-memo? obj)
          (let ((result (actual-value
                         (thunk-exp obj)
                         (thunk-env obj))))
@@ -56,6 +61,7 @@
            (set-car! (cdr obj) result)
            (set-cdr! (cdr obj) '())
            result))
+        ((thunk? obj) (actual-value (thunk-exp obj) (thunk-env obj)))
         ((evaluated-thunk? obj)
          (thunk-value obj))
         (else obj)));;3 situation
@@ -74,6 +80,26 @@
             (list-of-delayed-args (rest-operands exps)
                                   env))))
 
+(define (arg-lazy? arg) 
+  (if (pair? arg)
+      (eq? (cadr arg) 'lazy)
+      #f))
+(define (arg-lazy-memo? arg) 
+  (if (pair? arg) 
+      (eq? (cadr arg) 'lazy-memo)
+      #f))
+
+(define (list-of-values-depends exps env)
+  (if (no-operands? exps)
+      '()
+      (cons (cond ((arg-lazy? (first-operand exps)) 
+                   (delay-it (car (first-operand exps)) env))
+                  ((arg-lazy-memo? (first-operand exps))
+                   (delay-it-memo (car (first-operand exps)) env))
+                  (else (actual-value (first-operand exps) env)))
+            (list-of-values-depends (rest-operands exps) env))))
+
+
 ;(define (force-it exp obj)
 ;  (if (thunk? obj)
 ;      (actual-value (thunk-exp obj) (thunk-env obj))
@@ -85,6 +111,20 @@
 (define (thunk? obj)
   (tagged-list? obj 'thunk))
 
+(define (delay-it-memo exp env)
+  (list 'thunk-memo exp env))
+
+
+
+(define (thunk-memo? obj)
+  (tagged-list? obj 'thunk-memo))
+
+
+
+
+
+
+
 (define (thunk-exp thunk) (cadr thunk))
 
 (define (thunk-env thunk) (caddr thunk))
@@ -93,7 +133,6 @@
   (tagged-list? obj 'evaluated-thunk))
 
 (define (thunk-value evaluated-thunk) (cadr evaluated-thunk))
-
 
 
 
@@ -540,11 +579,15 @@
 
 ;;the test
 
-;(if false (/ 1 0) 1)
+;(define (f x y z) (+ x y))
 
-;(define (f x y) x)
+;(f 1 2 (/ 1 0))
 
-;(f 1 (/ 1 0))
+;error
+
+;(f 1 2 ((/ 1 0) lazy))
+
+;3
 
 
 
