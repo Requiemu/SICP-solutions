@@ -1,5 +1,7 @@
 #lang planet neil/sicp
 
+;;只是改了求值顺序而已。参数先不求值，在真正需要时（遇到primitive procedure，或明确要求给出真实值时）再给出真实值。
+
 (define (eval exp env)
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
@@ -56,7 +58,7 @@
            result))
         ((evaluated-thunk? obj)
          (thunk-value obj))
-        (else obj)))
+        (else obj)));;3 situation
 
 (define (list-of-arg-values exps env)
   (if (no-operands? exps)
