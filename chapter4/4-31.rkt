@@ -13,7 +13,7 @@
                          (lambda-body exp)
                          env))
         ((let? exp) (eval (let->lambda exp) env))
-        ;((letrec? exp) (eval (letrec->let exp) env))
+        ((letrec? exp) (eval (letrec->let exp) env))
         ((begin? exp)
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
@@ -27,8 +27,7 @@
   (cond ((primitive-procedure? procedure)
          (apply-primitive-procedure 
           procedure 
-          (list-of-values 
-           (list-of-values-depends arguments env) env)))
+          (list-of-arg-values arguments env)))
         ((compound-procedure? procedure)
          (eval-sequence
           (procedure-body procedure)
@@ -41,6 +40,7 @@
           "Unknown procedure type -- APPLY-NEW" procedure))))
 
 ;;====================================================
+;;lazy evaluation added function
 
 (define (actual-value exp env)
   (force-it (eval exp env)))
@@ -59,18 +59,64 @@
          (thunk-value obj))
         (else obj)));;3 situation
 
+(define (list-of-arg-values exps env)
+  (if (no-operands? exps)
+      '()
+      (cons (actual-value (first-operand exps) env)
+            (list-of-arg-values (rest-operands exps)
+                                env))))
+
+(define (list-of-delayed-args exps env)
+  (if (no-operands? exps)
+      '()
+      (cons (delay-it (first-operand exps) env)
+            (list-of-delayed-args (rest-operands exps)
+                                  env))))
+
+(define (arg-lazy? arg) 
+  (if (pair? arg)
+      (eq? (cadr arg) 'lazy)
+      #f))
+(define (arg-lazy-memo? arg) 
+  (if (pair? arg) 
+      (eq? (cadr arg) 'lazy-memo)
+      #f))
+
+(define (list-of-values-depends exps env)
+  (if (no-operands? exps)
+      '()
+      (cons (cond ((arg-lazy? (first-operand exps)) 
+                   (delay-it (car (first-operand exps)) env))
+                  ((arg-lazy-memo? (first-operand exps))
+                   (delay-it-memo (car (first-operand exps)) env))
+                  (else (actual-value (first-operand exps) env)))
+            (list-of-values-depends (rest-operands exps) env))))
+
+
+;(define (force-it exp obj)
+;  (if (thunk? obj)
+;      (actual-value (thunk-exp obj) (thunk-env obj))
+;      obj))
+
 (define (delay-it exp env)
   (list 'thunk exp env))
+
+(define (thunk? obj)
+  (tagged-list? obj 'thunk))
 
 (define (delay-it-memo exp env)
   (list 'thunk-memo exp env))
 
 
-(define (thunk? obj)
-  (tagged-list? obj 'thunk))
 
 (define (thunk-memo? obj)
   (tagged-list? obj 'thunk-memo))
+
+
+
+
+
+
 
 (define (thunk-exp thunk) (cadr thunk))
 
@@ -87,40 +133,17 @@
 
 
 
+
+
+
+
+;;====================================================
+
 (define (list-of-values exps env)
   (if (no-operands? exps)
       '()
-      (cons (actual-value (first-operand exps) env)
+      (cons (eval (first-operand exps) env)
             (list-of-values (rest-operands exps) env))))
-
-(define (arg-lazy? arg) 
-  (if (pair? arg)
-      (eq? (cadr arg) 'lazy)
-      #f))
-(define (arg-lazy-memo? arg) 
-  (if (pair? arg) 
-      (eq? (cadr arg) 'lazy-memo)
-      #f))
-
-(define (list-of-values-depends exps env)
-  (if (no-operands? exps)
-      '()
-      (cons (cond ((arg-lazy? (first-operand exps)) 
-                   (delay-it (first-operand exps) env))
-                  ((arg-lazy-memo? (first-operand exps))
-                   (delay-it-memo (first-operand exps) env))
-                  (else (eval (first-operand exps) env)))
-            (list-of-values-depends (rest-operands exps) env))))
-
-
-
-
-
-
-
-
-
-
 
 (define (set!? exp) (tagged-list? exp 'set!))
 (define (set!-var exp) (cadr exp))
@@ -130,8 +153,13 @@
                        (eval (set!-val exp) env)
                        env))
 
+;(define (eval-if exp env)
+;  (if (true? (eval (if-predicate exp) env))
+;      (eval (if-consequent exp) env)
+;      (eval (if-alternative exp) env)))
+
 (define (eval-if exp env)
-  (if (true? (eval (if-predicate exp) env))
+  (if (true? (actual-value (if-predicate exp) env))
       (eval (if-consequent exp) env)
       (eval (if-alternative exp) env)))
 
@@ -152,6 +180,20 @@
     (eval (definition-value exp) env)
     env)
   'ok)
+
+(define (list-of-values-right-to-left exps env)
+  (define (iter exp l)
+    (if (no-operands? exps)
+        l
+        (iter (rest-operands exps) 
+              (append l 
+                      (eval (first-operand exps) env)))))
+  (iter exps '()))
+
+;(display "--------------")
+
+;(define (list-of-values-left-to-right exps env)
+;  (reverse (list-of-values-right-to-left (reverse exps env))))
 
 (define (self-evaluating? exp)
   (cond ((number? exp) true)
@@ -407,10 +449,12 @@
 
 
 
+;
+;(define input-prompt ";;; M-Eval input:")
+;(define output-prompt ";;; M-Eval value:")
 
-(define input-prompt ";;; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
-
+(define input-prompt ";;; L-Eval input:")
+(define output-prompt ";;; L-Eval value:")
 (define (driver-loop)
   (prompt-for-input input-prompt)
   (let ((input (read)))
@@ -419,6 +463,16 @@
       (announce-output output-prompt)
       (user-print output)))
   (driver-loop))
+
+;(define (driver-loop)
+;  (prompt-for-input input-prompt)
+;  (let ((input (read)))
+;    (let ((output (eval input the-global-environment)))
+;      (announce-output output-prompt)
+;      (user-print output)))
+;  (driver-loop))
+
+
 
 (define (prompt-for-input string)
   (newline) (newline) (display string) (newline))
@@ -466,10 +520,10 @@
     (if (null? defs) exp
         (make-lambda (cadr nondefs)
                      (list (cons 'let 
-                                 (cons (map (lambda (x) (list (cadr x) "*unassigned*"))
+                                 (cons (map (lambda (x) (list (definition-variable x) "*unassigned*"))
                                             defs)
                                        (append 
-                                        (map (lambda (x) (list 'set! (cadr x) (caddr x)))
+                                        (map (lambda (x) (list 'set! (definition-variable x) (definition-value x)))
                                              defs)
                                         (cddr nondefs)))))))))
 
@@ -480,18 +534,53 @@
 (define (body-transform body)
   (cddr (scan-out-defines (cons 'lambda (cons 'vars body)))))
 
+
+
+
+;;;;;;
+;;(let ((x y) (z i) (j u)
+
+(define (letrec? exp)
+  (if (pair? exp)
+      (if (eq? (car exp) 'letrec)
+          #t
+          #f)
+      #f))
+
+(define (make-produce-symbol n)
+  (define make 
+    (lambda () 
+      (set! n (+ n 1))
+      (string->symbol (number->string n))))
+  make)
+
+(define sy (make-produce-symbol 1))
+
+(define (letrec->let exp)
+  (let ((let-out (map (lambda (x) (list (car x) "*unassigned*")) (cadr exp)))
+        (let-in  (map (lambda (x) (list (sy) (cadr x))) (cadr exp))))
+    (list 'let 
+          let-out
+          (cons 'let
+                (cons let-in 
+                      (append 
+                       (map (lambda (x y) (list 'set! (car x) (car y)))
+                            let-out let-in)
+                       (cddr exp)))))))
+
 (driver-loop)
 
-;;test
-;(let ((a 1))
-;  (define (f x)
-;    (define b (+ a x))
-;    (define a 5)
-;    (+ a b))
-;  (f 10))
+;;the test
 
-;;>Unbound variable x
-;;In this case, Alyssa' opinion is right.
+;(define (f x y z) (+ x y))
+
+;(f 1 2 ((/ 1 0) lazy))
+
+;3
+
+
+
+
 
 
 
