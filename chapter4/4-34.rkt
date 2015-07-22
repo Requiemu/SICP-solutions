@@ -162,7 +162,8 @@
 ;  (reverse (list-of-values-right-to-left (reverse exps env))))
 
 (define (self-evaluating? exp)
-  (cond ((number? exp) true)
+  (cond ((null? exp) true) 
+        ((number? exp) true)
         ((string? exp) true)
         (else false)))
 
@@ -171,13 +172,17 @@
 (define (quoted? exp)
   (tagged-list? exp 'quote))
 
-(define (text-of-quotation exp env) 
+(define (text-of-quotation exp env)
+  (define (iter ls result)
+    (if (null? ls) (eval result env)
+        (iter (cdr ls) (make-cons (car ls) result))))
   (let ((r (cadr exp)))
-    (define rr (reverse r))
-    (define (iter ls result)
-      (if (null? ls) (eval result env)
-          (iter (cdr ls) (make-cons (car ls) result))))
-    (if (pair? r) (iter rr '()) r)))
+    (if (pair? r) 
+        (let ((rr (reverse r)))
+          (iter rr '()))
+        r)))
+
+
 
 (define (tagged-list? exp tag)
   (if (pair? exp)
@@ -454,27 +459,35 @@
 (define (announce-output string)
   (newline) (display string) (newline))
 
-(define (display-cons exp)
-  (define env (procedure-environment exp))
-  (if (procedure-cons? exp)
-      (cons ((lookup-variable-value 'x env)
-             (lookup-variable-value 'y env)))
-      exp))
+(define (display-cons exp n)
+  (if (>= n 1)
+      (if (procedure-cons? exp)
+          (let ((env (procedure-environment exp)))
+            (list 'cons
+                  (display-cons (actual-value 'x env) (- n 1))
+                  (display-cons (actual-value 'y env) (- n 1))))
+          exp)
+      "..."))
 
 
 (define (user-print object)
   (cond ((procedure-cons? object)
-         (let ((env (procedure-environment object)))
-           (display 
-            (list 'cons
-                  ((lookup-variable-value 'x env)
-                   (lookup-variable-value 'y env))))))
-         ((compound-procedure? object)
-          (display (list 'compound-procedure
-                         (procedure-parameters object)
-                         (procedure-body object)
-                         '<procedure-env>)))
-         (else (display object))))
+         ;         (let ((env (procedure-environment object)))
+         ;           (display 
+         ;            (list 'cons
+         ;                  (if (not (procedure-cons? (actual-value 'x env)))
+         ;                      (actual-value 'x env)
+         ;                      (user-print (actual-value 'x env)))
+         ;                  (if (not (procedure-cons? (actual-value 'y env)))
+         ;                      (actual-value 'y env)
+         ;                      (user-print (actual-value 'y env))))))
+         (display (display-cons object 10)))
+        ((compound-procedure? object)
+         (display (list 'compound-procedure
+                        (procedure-parameters object)
+                        (procedure-body object)
+                        '<procedure-env>)))
+        (else (display object))))
 
 
 
@@ -592,11 +605,13 @@
 
 ;;=========================================
 
-(define (procedure-cons? exp) 
-  (and 
-   (equal? (car exp) 'procedure) 
-   (equal? (cadr exp) '(m))
-   (equal? (caddr exp) '((m x y)))))
+(define (procedure-cons? exp)
+  (if (pair? exp)
+      (and 
+       (equal? (car exp) 'procedure) 
+       (equal? (cadr exp) '(m))
+       (equal? (caddr exp) '((m x y))))
+      #f))
 
 ;(define (display-cons exp)
 ;  (define env (procedure-environment exp))
