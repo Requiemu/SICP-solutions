@@ -32,7 +32,23 @@
                          (stream-rest s2)
                          (stream-rest s3)))))
 
-(define test (triples integers integers integers))
+(define (square x) (* x x))
+
+(define (Pythagorean-triples? l) 
+  (= (square (caddr l)) (+ (square (cadr l)) (square (car l)))))
+
+(define (Pythagorean-triples s1 s2 s3)
+  (define (iter t)
+    (if (Pythagorean-triples? (stream-first t))
+          (stream-cons (stream-first t)
+                       (iter (stream-rest t)))
+          (iter (stream-rest t))))
+  (let ((tri (triples s1 s2 s3)))
+    (iter tri)))
+    
+  
+
+(define test (Pythagorean-triples integers integers integers))
 
 (display (stream-ref test 0))
 (newline)
