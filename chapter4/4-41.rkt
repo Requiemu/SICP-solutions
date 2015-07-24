@@ -125,7 +125,9 @@
 
 (display-list (solution 5 name))
 
-(display-list (solution 6 name))
+(display-list (solution 3 name))
+
+(display-list (solution 10 name))
 
 
 
