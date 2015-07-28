@@ -8,6 +8,8 @@
 (define Barnacle (person 'Melissa 'Gabrielle))
 (define Parker (person #f #f))
 
+(define fathers (list Moore Colonel Hall Barnacle Parker))
+
 ;;(require (eq? (yacht (father Gabrielle))
 ;;              (daughter Parker))
   
