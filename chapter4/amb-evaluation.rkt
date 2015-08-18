@@ -26,7 +26,7 @@
         (if (null? choices)
             (fail)
             ((car choices)
-             env
+              env
              succeed
              (lambda () (try-next (cdr choices))))))
       (try-next cprocs))))
