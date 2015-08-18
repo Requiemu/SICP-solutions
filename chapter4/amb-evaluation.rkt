@@ -3,7 +3,7 @@
 (define (analyze exp)
   (cond ((self-evaluating? exp)
          (analyze-self-evaluating exp))
-        ;((amb? exp) (analyze-amb exp));;analyze-amb
+        ((amb? exp) (analyze-amb exp));;analyze-amb
         ((quoted? exp) (analyze-variable exp))
         ((variable? exp) (analyze-variable exp))
         ((assignment? exp) (analyze-assignment exp));;...
@@ -18,6 +18,18 @@
 
 ;;====================================================
 ;;analyze procedure
+
+(define (analyze-amb exp)
+  (let ((cprocs (map analyze (amb-choices exp))))
+    (lambda (env succeed fail)
+      (define (try-next choices)
+        (if (null? choices)
+            (fail)
+            ((car choices)
+             env
+             succeed
+             (lambda () (try-next (cdr choices))))))
+      (try-next cprocs))))
 
 ;(define (analyze-self-evaluating exp)
 ;  (lambda (env) exp))
@@ -59,7 +71,7 @@
                       (lookup-variable-value var env)))
                  (set-variable-value! var val env)
                  (succeed 'ok
-                          (lamda ()  ;*2*
+                          (lambda ()  ;*2*
                                  (set-variable-value!
                                   var old-value env)
                                  (fail2)))))
@@ -102,7 +114,7 @@
              (lambda (pred-value fail2)
                (if (true? pred-value)
                    (cproc env succeed fail2)
-                   (aproc env succeed fial2)))
+                   (aproc env succeed fail2)))
              ;;failure continuation for evaluating the predicate
              fail))))
 
@@ -151,27 +163,74 @@
         (error "Empty sequence: ANALYZE"))
     (loop (car procs) (cdr procs)))) 
 
+;(define (analyze-application exp)
+;  (let ((fproc (analyze (operator exp)))
+;        (aprocs (map analyze (operands exp))))
+;    (lambda (env)
+;      (execute-application (fproc env)
+;                           (map (lambda (aproc) (aproc env))
+;                                aprocs)))))
+
+
 (define (analyze-application exp)
   (let ((fproc (analyze (operator exp)))
         (aprocs (map analyze (operands exp))))
-    (lambda (env)
-      (execute-application (fproc env)
-                           (map (lambda (aproc) (aproc env))
-                                aprocs)))))
+    (lambda (env succeed fail)
+      (fproc env
+             (lambda (proc fail2)
+               (get-args aprocs
+                         env
+                         (lambda (args fail3)
+                           (execute-application
+                            proc args succeed fail3))
+                         fail2))
+             fail))))
 
+(define (get-args aprocs env succeed fail)
+  (if (null? aprocs)
+      (succeed '() fail)
+      ((car aprocs)
+       env
+       ;;success continuation for this aproc
+       (lambda (arg fail2)
+         (get-args
+          (cdr aprocs)
+          env
+          ;;success continuation for
+          ;;resursive call to get-args
+          (lambda (args fail3)
+            (succeed (cons arg args) fail3))
+          fail2))
+       fail)))
 
-(define (execute-application proc args)
+;(define (execute-application proc args)
+;  (cond ((primitive-procedure? proc)
+;         (apply-primitive-procedure proc args))
+;        ((compound-procedure? proc)
+;         ((procedure-body proc)
+;          (extend-environment (procedure-parameters proc)
+;                              args
+;                              (procedure-environment proc))))
+;        (else
+;         (error 
+;          "Unknown procedure type -- EXECUTE-APPLICATION"
+;          proc))))
+
+(define (execute-application proc args succeed fail)
   (cond ((primitive-procedure? proc)
-         (apply-primitive-procedure proc args))
+         (succeed (apply-primitive-procedure proc args)
+                  fail))
         ((compound-procedure? proc)
          ((procedure-body proc)
-          (extend-environment (procedure-parameters proc)
-                              args
-                              (procedure-environment proc))))
+          (extend-environment
+           (procedure-parameters proc)
+           args
+           (procedure-environment proc))
+          succeed
+          fail))
         (else
-         (error 
-          "Unknown procedure type -- EXECUTE-APPLICATION"
-          proc))))
+         (error "Unknown procedure type: EXECUTE-APPLICATION"
+                proc))))
 
 ;;==================================
 ;;surpport grammar data structure
@@ -472,16 +531,47 @@
 
 
 
-(define input-prompt ";;; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
+;(define input-prompt ";;; M-Eval input:")
+;(define output-prompt ";;; M-Eval value:")
+
+(define input-prompt  ";;; Amb-Eval input:")
+(define output-prompt ";;; Amb-Eval value:")
+
+
+;(define (driver-loop)
+;  (prompt-for-input input-prompt)
+;  (let ((input (read)))
+;    (let ((output (eval input the-global-environment)))
+;      (announce-output output-prompt)
+;      (user-print output)))
+;  (driver-loop))
 
 (define (driver-loop)
-  (prompt-for-input input-prompt)
-  (let ((input (read)))
-    (let ((output (eval input the-global-environment)))
-      (announce-output output-prompt)
-      (user-print output)))
-  (driver-loop))
+  (define (internal-loop try-again)
+    (prompt-for-input input-prompt)
+    (let ((input (read)))
+      (if (eq? input 'try-again)
+          (try-again)
+          (begin
+            (newline) (display ";;; Starting a new problem ")
+            (ambeval
+             input
+             the-global-environment
+             ;;ambeval success
+             (lambda (val next-alternative)
+               (announce-output output-prompt)
+               (user-print val)
+               (internal-loop next-alternative))
+             ;;ambeval failure
+             (lambda ()
+               (announce-output
+                ";;; There are no more values of")
+               (user-print input)
+               (driver-loop)))))))
+  (internal-loop
+   (lambda ()
+     (newline) (display ";;; Thereis no current problem")
+     (driver-loop))))
 
 (define (prompt-for-input string)
   (newline) (newline) (display string) (newline))
